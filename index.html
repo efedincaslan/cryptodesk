@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Crypto Desk</title>
+</head>
+<style>
+    body {
+        background-color : #0f0f0f;
+        color: white;
+    }
+
+    h1 {
+        font-size: 18px;
+    }
+    table {
+        width: 50%;
+        border-collapse: collapse;
+        
+    }
+    th, td {
+        text-align: left;
+        border: 1px solid #ddd;
+    }
+</style>
+<body>
+
+    <div id="prices"></div>
+
+    
+        <div>
+        <h1> Watchlist </h1>
+        </div>
+        <div>
+        <table id="watchlist-table">
+            <tr>
+                <th>Coin</th>
+                <th>Price</th>
+                <th>24h % Change</th>
+            </tr>
+
+            <tbody id="watchlist-body">
+        <!-- rows go here -->
+            </tbody>
+
+            </table>
+
+        </div>
+        <div>
+            <h2>Order Form</h2>
+            <label for="crypto">Choose a coin:</label>
+            <select name="crypto" id="crypto" onchange="updatePrice()">
+            <option value="">Select coin</option>
+            <option value="BTC">BTC</option>
+            <option value="ETH">ETH</option>
+            <option value="BNB">BNB</option>
+            <option value="SOL">SOL</option>
+            <option value="AVAX">AVAX</option>
+            </select>
+            <label for="quantity">Quantity:</label>
+            <input type="number" id="quantity" name="quantity" value="1">
+            <p>Price: <span id="price-display">0</span></p>
+            <button type="button" onclick="placeOrder('buy')">BUY</button>
+            <button type="button" onclick="placeOrder('sell')">SELL</button>
+
+        </div>
+        <script>
+
+            let cryptoPrices = {}
+            async function getData() {
+                try {
+                    
+                    const response = await fetch('http://127.0.0.1:8000/prices');
+                    if (!response.ok) throw new Error('Status: ' + response.status); // Check for 404/500 errors
+                    const data = await response.json(); // Parse body as JSON
+                    document.getElementById("watchlist-body").innerHTML = ""
+                    data.forEach(function(coin) {
+                    
+                    const table = document.getElementById("watchlist-body")
+                    const row = table.insertRow()
+                    const cell1 = row.insertCell()
+                    const cell2 = row.insertCell()
+                    const cell3 = row.insertCell()
+                    cell1.innerText = coin.symbol.toUpperCase()
+                    cell2.innerText = coin.current_price
+                    cell3.innerText = coin.price_change_percentage_24h.toFixed(2) + "%"
+                    cryptoPrices[coin.symbol.toUpperCase()] = coin.current_price
+                    if (coin.price_change_percentage_24h > 0) {
+                        cell3.style.color = "#00ff88"  // green
+                    } else {
+                        cell3.style.color = "#ff4444"  // red
+                    }
+                })
+                } catch (error) {
+                    console.error('Fetch error:', error);
+                }
+            }
+
+
+
+            getData();
+            setInterval(function() {
+                getData()
+
+            }, 30000)
+            async function updatePrice() {
+                const coinSelected = document.getElementById("crypto").value;
+                const priceOfCoin = cryptoPrices[coinSelected];
+                document.getElementById("price-display").innerText = priceOfCoin
+            }
+
+            async function placeOrder(orderType){
+
+                const coinSelected = document.getElementById("crypto").value;
+                const quantity = document.getElementById("quantity").value;
+                const priceOfCoin = cryptoPrices[coinSelected];
+
+                const order = {
+                    coin : coinSelected,
+                    quantity : quantity,
+                    price : priceOfCoin,
+                    order_type : orderType
+                }
+                const response = await fetch("http://127.0.0.1:8000/order", {
+                    method: "POST" ,
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(order)
+                });
+                const result = await response.json();
+                console.log(order);
+
+            }
+            
+        </script>

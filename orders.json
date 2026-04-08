@@ -1,0 +1,14 @@
+[
+    {
+        "coin": "SOL",
+        "quantity": 1,
+        "price": 81.39,
+        "orderType": "sell"
+    },
+    {
+        "coin": "BTC",
+        "quantity": 1,
+        "price": 69373.0,
+        "orderType": "buy"
+    }
+]
